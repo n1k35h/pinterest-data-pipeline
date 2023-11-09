@@ -2,12 +2,13 @@
 
 ## Table Content
 
-## Brief Description
 
-## Installation Instructions
+### Brief Description
 
-## Usage Instructions
+### Installation Instructions
 
-## File Structure of the Project
+### Usage Instructions
 
-## License Information
+### File Structure of the Project
+
+### License Information
