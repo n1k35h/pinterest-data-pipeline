@@ -5,6 +5,9 @@ Pinterest is a world-class visual discovery platform where users can find ideas 
 - [Brief Description](#brief-description)
     - [Tools used for the project](#tools-used-for-the-project)
 - [Installation Instructions](#installation-instructions)
+    - [Setting up AWS Cloud account - Step by Step](#set-up-aws-cloud-account)
+    - [Creating a Key Pair](#creating-a-key-pair)
+    - [Setting up Amazon EC2 Client Machine:](#setting-up-amazon-ec2-client-machine)
 - [Usage Instructions](#usage-instructions)
 - [File Structure of the Project](#file-structure-of-the-project)
 - [License Information](#license-information)
@@ -61,14 +64,14 @@ For this project an AWS Cloud account must be created to be able to use differen
 ### Document
 In order to mimic the kind of work that Data Engineers work at Pinterest, this project contained a Python script, [user_posting_emulation.py](user_posting_emulation.py). When running in terminal it streamed random data points that was received by the Pinterest API when a POST request was made by a user uploading data to Pinterest. Below are the 3 tables that was contained in the AWS RDS Database:
 
-    -   'pinterest_data' contains data about posts being updated to Pinterest
-    -   'geolocation_data' contains data about the geolocation of each Pinterest post found in 'pinterest_data'
-    -   'user_data' contains data about the user that has uploaded each post found in 'pinterest_data'
+-   'pinterest_data' contains data about posts being updated to Pinterest
+-   'geolocation_data' contains data about the geolocation of each Pinterest post found in 'pinterest_data'
+-   'user_data' contains data about the user that has uploaded each post found in 'pinterest_data'
 
 ### Creating a Key Pair
 Definition of Key Pair
 
-    -   In Amazon EC2, a key pair is a secure method of accessing your EC2 instances. It consists of a public key and a corresponding private key. The public key is used to encrypt data that can only be decrypted using the private key. Key pairs are essential for establishing secure remote access to your EC2 instances.
+-   In Amazon EC2, a key pair is a secure method of accessing your EC2 instances. It consists of a public key and a corresponding private key. The public key is used to encrypt data that can only be decrypted using the private key. Key pairs are essential for establishing secure remote access to your EC2 instances.
 
 To create a new key pair navigate to EC2 console > Network & Security > Key Pair and top right hand corner click 'Create Key Pair', which will take the user to the below page. Here is where the user will create the new Key Pair. Give the key pair a descriptive name and choose 'RSA' and '.pem' for the file extension name. 
 
