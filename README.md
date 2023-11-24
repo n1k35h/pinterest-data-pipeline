@@ -62,11 +62,19 @@ For this project an AWS Cloud account must be created to be able to use differen
 1. Access your AWS account
 
 ### Document
-In order to mimic the kind of work that Data Engineers work at Pinterest, this project contained a Python script, [user_posting_emulation.py](user_posting_emulation.py). When running in terminal it streamed random data points that was received by the Pinterest API when a POST request was made by a user uploading data to Pinterest. Below are the 3 tables that was contained in the AWS RDS Database:
+In order to mimic the kind of work that Data Engineers work at Pinterest, this project contained a Python script, [user_posting_emulation.py](user_posting_emulation.py). When running in terminal it executes random data points (as seen below images) for those 3 tables that are received by the Pinterest API when a POST request was made by the user. Below are the 3 tables that was contained in the AWS RDS Database:
 
 -   'pinterest_data' contains data about posts being updated to Pinterest
+
+![](images/pin_data.png)
+
 -   'geolocation_data' contains data about the geolocation of each Pinterest post found in 'pinterest_data'
+
+![](images/geo_data.png)
+
 -   'user_data' contains data about the user that has uploaded each post found in 'pinterest_data'
+
+![](images/user_data.png)
 
 ### Creating a Key Pair
 Definition of Key Pair
