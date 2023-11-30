@@ -4,13 +4,21 @@ Pinterest is a world-class visual discovery platform where users can find ideas 
 ## Table Content
 - [Brief Description](#brief-description)
     - [Tools used for the project](#tools-used-for-the-project)
-- [Installation Instructions](#installation-instructions)
+- [Starting to build the Data Pipeline](#starting-to-build-the-data-pipeline)
     - [Setting up AWS Cloud account - Step by Step](#set-up-aws-cloud-account)
+    - [Document Download](#document-download)
+- [Configuring the EC2 Kafka Client](#configuring-the-ec2-kafka-client)
     - [Creating a Key Pair](#creating-a-key-pair)
     - [Setting up Amazon EC2 Client Machine:](#setting-up-amazon-ec2-client-machine)
-- [Usage Instructions](#usage-instructions)
-- [File Structure of the Project](#file-structure-of-the-project)
-- [License Information](#license-information)
+    - [Setting up Kafka on EC2 instances](#setting-up-amazon-ec2-client-machine)
+    - [Create Kafka topics](#create-kafka-topics)
+- [Connecting to MSK cluster to a S3 Bucket](#connecting-to-msk-cluster-to-a-s3-bucket)
+    - [Creating a custom plugin with MSK Connect](#creating-a-custom-plugin-with-msk-connect)
+    - [Creating a connector with MSK Cluster](#creating-a-connector-with-msk-cluster)
+- [Configuring an API in API Gateway](#configuring-an-api-in-api-gateway)
+    - [Building a Kafka REST proxy integration method for the API](#building-a-kafka-rest-proxy-integration-method-for-the-api)
+    - [Setting up the Kafka REST proxy on the EC2 Client](#setting-up-the-kafka-rest-proxy-on-the-ec2-client)
+    - [Sending data to the API](#sending-data-to-the-api)
 
 ## Brief Description
 For this project, the scenario is to create a system that uses the AWS Cloud that will enables the Pinterest to crunch billions of data points each day by running through two separate pipelines - Batch Processing and Stream Processing. 
@@ -20,6 +28,9 @@ For this project, the scenario is to create a system that uses the AWS Cloud tha
 - Stream Processing is where data is processed as soon as it is ingested into the system
 
 ### Tools used for this project :
+
+-   Key Pair - In Amazon EC2, a key pair is a secure method of accessing your EC2 instances. It consists of a public key and a corresponding private key. The public key is used to encrypt data that can only be decrypted using the private key. Key pairs are essential for establishing secure remote access to your EC2 instances.
+
 - Amazon EC2 - is used as an Apache Kafka client machine
     - Amazon Elastic Compute Cloud (EC2) is a key component of Amazon Web Services (AWS) and plays a vital role in cloud computing. EC2 provides a scalable and flexible infrastructure for hosting virtual servers, also known as instances, in the cloud.
 - Apache Kafka - Apache Kafka is a relatively new open-source technology for distributed data storage optimised for ingesting and processing streaming data in real-time. Kafka provides 3 main functions:
@@ -39,8 +50,11 @@ For this project, the scenario is to create a system that uses the AWS Cloud tha
 
 - Amazon S3 - Amazon S3, also known as Simple Storage Service, is a scalable and highly available object storage service provided by AWS. Its primary purpose is to store and retrieve large amounts of data reliably, securely, and cost-effectively.
 
-## Installation Instructions
-Setting up and steps followed:
+- API Gateway - Amazon API Gateway is an AWS service that allows the creation, maintenance and securing of scalable REST, HTTP and Websocket APIs. APIs can be created to access AWS services and other web services or data stored in the AWS Cloud. As a developer, you can use the service to create APIs that serve your client's applications or that are available to third-party app developers.
+
+
+
+## Starting to build the Data Pipeline
 
 ### Set up AWS Cloud account:
 For this project an AWS Cloud account must be created to be able to use different services that runs in the AWS Cloud. To create an AWS Cloud account visit the [AWS Website](https://colab.research.google.com/corgiredirector?site=https%3A%2F%2Fconsole.aws.amazon.com%2Fconsole%2Fhome) and click on 'Create a new AWS account'.
@@ -61,7 +75,7 @@ For this project an AWS Cloud account must be created to be able to use differen
 1. Wait for AWS account activation
 1. Access your AWS account
 
-### Document
+### Document Download
 In order to mimic the kind of work that Data Engineers work at Pinterest, this project contained a Python script, [user_posting_emulation.py](user_posting_emulation.py). When running in terminal it executes random data points (as seen below images) for those 3 tables that are received by the Pinterest API when a POST request was made by the user. Below are the 3 tables that was contained in the AWS RDS Database:
 
 -   'pinterest_data' contains data about posts being updated to Pinterest
@@ -76,12 +90,12 @@ In order to mimic the kind of work that Data Engineers work at Pinterest, this p
 
 ![](images/user_data.png)
 
+## Configuring the EC2 Kafka client
+Configuring an Amazon EC2 Instance that use Apache Kafka Client Machine will require creating a Key Pair, setting up Amazon EC2 Client Machine, setting up Kafka on EC2 instances and creating a Kafka Topics.
+
 ### Creating a Key Pair
-Definition of Key Pair
 
--   In Amazon EC2, a key pair is a secure method of accessing your EC2 instances. It consists of a public key and a corresponding private key. The public key is used to encrypt data that can only be decrypted using the private key. Key pairs are essential for establishing secure remote access to your EC2 instances.
-
-To create a new key pair navigate to EC2 console > Network & Security > Key Pair and top right hand corner click 'Create Key Pair', which will take the user to the below page. Here is where the user will create the new Key Pair. Give the key pair a descriptive name and choose 'RSA' and '.pem' for the file extension name. 
+To create a new key pair from scratch navigate to EC2 console > Network & Security > Key Pair and top right hand corner click 'Create Key Pair', which will take the user to the below page. Here is where the user will create the new Key Pair. Give the key pair a descriptive name and choose 'RSA' and '.pem' for the file extension name. 
 
 ![](images/create_key_pair.png)
 
@@ -95,11 +109,9 @@ To connect using an SSH client:
 ![](images/connect_to_instance.png)
 
 
-
 1. Ensure you have the private key file (.pem) associated with the key pair used for the instance.
 
 1. Open the terminal in the VSC application. In the terminal an appropriate permission needs to be set for the private key to be only accessible to the owner. Here is the command to set the permission:
-
 
         chmod 400 /path/to/private_key.pem
 
@@ -113,9 +125,214 @@ To connect using an SSH client:
 
     ![](images/ec2_cm.png)
 
+### Setting up Kafka on EC2 instances 
+Before installing Kafka, a Java packages was needed to be installed first
 
-## Usage Instructions
+        sudo yum install java-1.8.0
 
-## File Structure of the Project
+Downloading Kafka, which has to be the same as MSK Cluster
 
-## License Information
+        wget https://archive.apache.org/dist/kafka/2.8.1/kafka_2.12-2.8.1.tgz
+
+Unpack the .tgz
+
+        tar -xzf kafka_2.12-2.8.1.tgz
+
+Before creating a Kafka topic on client machine additional steps needed to be followed, so that IAM authentication can be connected to cluster
+
+1. Navigate to Kafka installation folder and then in the libs folder download the [IAM MSK authentication](https://github.com/aws/aws-msk-iam-auth/releases/download/v1.1.5/aws-msk-iam-auth-1.1.5-all.jar) package from Github, using the following command:
+
+        wget https://github.com/aws/aws-msk-iam-auth/releases/download/v1.1.5/aws-msk-iam-auth-1.1.5-all.jar
+
+1. Configure the EC2 Client Machine by using AWS IAM for Cluster authentication as this will contains the necessary permissions to authenticate to the MSK cluster:
+
+    -   Navigate to the IAM console
+    -   On the left hand side select the Roles section
+    -   In this list of roles, select the one with the following format: <your_UserId>-ec2-access-role
+    -   Copy role ARN and make a note of it, as it will be used later for the cluster authentication
+    -   Go to the Trust relationships tab and select Edit trust policy
+    -   Click on the Add a principal button and select IAM roles as the Principal type
+    -   Replace ARN with the <UserId>-ec2-access-role
+
+1. Modify the client.properties file, inside the kafka_folder/bin directory by using the code below:
+
+        # Sets up TLS for encryption and SASL for authN.
+        security.protocol = SASL_SSL
+
+        # Identifies the SASL mechanism to use.
+        sasl.mechanism = AWS_MSK_IAM
+
+        # Binds SASL client implementation.
+        sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required;
+
+        # Encapsulates constructing a SigV4 signature based on extracted credentials.
+        # The SASL client bound by "sasl.jaas.config" invokes this class.
+        sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
+
+### Create Kafka topics
+If the above is set up properly then it is possible to create topics on the Kafka cluster using the client machine command line. The command for creating topics is as follows.
+
+    <path-to-your-kafka-installation>/bin/kafka-topics.sh --create --bootstrap-server <BootstrapServerString> --command-config client.properties --topic <topic name>
+
+The below 3 topics for this project was created. One each for the pinterest_data, geolocation_data, and user_data outlined above.
+
+Also, made sure the CLASSPATH is set up properly by following the below command:
+
+    export CLASSPATH=/home/ec2-user/kafka_2.12-2.8.1/libs/aws-msk-iam-auth-1.1.5-all.jar
+
+## Connecting to MSK cluster to a S3 Bucket
+
+Using MSK Connect to connect the MSK Cluster to a S3 Bucket, will automatically save and store data in the dedicated S3 Bucket.
+
+For the S3 Bucket to work the following steps needed be actioned
+
+### Creating a custom plugin with MSK Connect
+
+For this project the S3 Bucket, IAM role that allows to write to the bucket or VPC Endpoint to S3 was not needed to be created from scratch as it was already created for this project. However, if you were to create from scratch these are the necessary step to take:
+
+Creating the S3 Bucket 
+1.  Navagate to the S3 Bucket
+1.  Click on 'Create bucket'
+1.  Provide the following information:
+    - AWS Region: Select the AWS region
+    - Bucket Type: Select the type of bucket
+    - Bucket Name: Enter unique name
+1. Leave the rest of the sections as recommended and default
+
+As the S3 Bucket was already created for this project, I navigated to the S3 Console and entered the 'userid' to find the bucket that was associated witht the 'userId' and made the note for the bucket name, which was in the following format 'user-(your_userid)-bucket' as this will be required in the next step.
+
+Here is where the object of the data will be saved and stored
+
+![](images/s3_object.png)
+
+Next, navigated to the MSK console and selected Customised plugins and clicked on 'Create custom plugin'.
+
+![](images/customised_plugin.png)
+
+Entered the S3 url as it was described in the search bar 's3://bucket/prefix/object' and customised plugin name was entered in following format '(userId)-plugin'.
+
+### Creating a connector with MSK Cluster
+
+Navigated to MSK console, selected Connectors under the MSK Connect section on the left side of the console. Choosed Create connector.
+
+In the list of plugin, I've entered the following name (userId)-plugin to select the plugin that I've created and then click Next. For the connector name I've entered the following name as (userId)-connector.
+
+In the Connector configuration settings i've copied the following configuration as:
+
+    connector.class=io.confluent.connect.s3.S3SinkConnector
+    # same region as our bucket and cluster
+    s3.region=us-east-1
+    flush.size=1
+    schema.compatibility=NONE
+    tasks.max=3
+    # include nomeclature of topic name, given here as an example will read all data from topic names starting with msk.topic....
+    topics.regex=<YOUR_UUID>.*
+    format.class=io.confluent.connect.s3.format.json.JsonFormat
+    partitioner.class=io.confluent.connect.storage.partitioner.DefaultPartitioner
+    value.converter.schemas.enable=false
+    value.converter=org.apache.kafka.connect.json.JsonConverter
+    storage.class=io.confluent.connect.s3.storage.S3Storage
+    key.converter=org.apache.kafka.connect.storage.StringConverter
+    s3.bucket.name=<BUCKET_NAME>
+
+## Configuring an API in API Gateway
+To replicate the Pinterest Data Pipeline an API needed to be build. So this API will send data to the MSK Cluster, which in turn will be stored in the S3 Bucket using the connector that was build in the previous section.
+
+### Building a Kafka REST proxy integration method for the API
+
+For this project an API has already been created, so no need to create one from scratch. However, if you were to create one from scratch below steps needed:
+
+1. Navigate to API Gateway
+1. Click on 'Create API'
+1. Select Build on REST API option
+1. Under Choose the protocol select REST API
+1. Under Create new API select New API
+1. Name the API, provide a description and select the Endpoint type for the API - i.e a regional API
+
+After the API is created, the Method page will appear like the one below. Here is where method will be created 
+
+![](images/api_method.png)
+
+With the API that was already created for this project, the next step was to create the Resource that allowed to build a PROXY integration for the API.
+
+![](images/resource_proxy.png)
+
+Next step was to create HTTP ANY method with the Endpoint URL
+
+![](images/http_any_method.png)
+
+Final step in the API was to Deploy the API, which would create the 'Invoke URL'. To do that was to click on the Action menu and clicked on 'Deploy API' option.
+
+![](images/deploy_api.png)
+
+After clicking the Deploy button the Invoke URL should show in the Stage section
+
+![](images/invoke_url.png)
+
+### Setting up the Kafka REST proxy on the EC2 Client
+
+After setting up the Kafka REST Proxy integration for the API, now setting up the Kafka REST Proxy on the EC2 client machine.
+
+Firstly, downloaded the Confluent package to set up REST API to communicate with Kafka cluster.
+
+To do that the below command was entered:
+
+    sudo wget https://packages.confluent.io/archive/7.2/confluent-7.2.0.tar.gz
+
+    tar -xvzf confluent-7.2.0.tar.gz  
+
+Next, modifying the kafka-rest.properties file with the below command:
+
+    # Navigating to 
+    confluent-7.2.0/etc/kafka-rest
+    # modifying the file 
+    nano kafka-rest.properties
+
+Inside the kafka-rest.properties the bootstrap.servers and zookeeper.connect was modify with the corresponding Boostrap server string and Plaintext Apache Zookeeper connection string info found in the MSK Cluster section.
+
+Also the below code was added to the kafka-rest.properties:
+
+    # Sets up TLS for encryption and SASL for authN.
+    client.security.protocol = SASL_SSL
+
+    # Identifies the SASL mechanism to use.
+    client.sasl.mechanism = AWS_MSK_IAM
+
+    # Binds SASL client implementation.
+    client.sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required awsRoleArn="Your Access Role";
+
+    # Encapsulates constructing a SigV4 signature based on extracted credentials.
+    # The SASL client bound by "sasl.jaas.config" invokes this class.
+    client.sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
+
+After modifying the kafka-rest.properties file, its time to start the REST proxy on the EC2 client machine with the following command:
+
+    # Navigating to the folder
+    confluent-7.2.0/bin
+
+    # Starting the REST Proxy
+    ./kafka-rest-start /home/ec2-user/confluent-7.2.0/etc/kafka-rest/kafka-rest.properties
+
+This was the output:
+
+![](images/listening_for_request.png)
+
+### Sending data to the API
+
+Data is ready to be send to the API, which will send the data to the MSK Cluster using the plugin-connector pair
+
+Modified the user_posting_emulation.py that will send data to the Kafka topics by using the API Invoke URL and storing random data points in JSON file
+
+After modifying the user_posting_emulation.py, to run and send the data, the REST Proxy and python file should run at the same time and if the response.code returns 200 from the python file then the data has been sent to the cluster successfully and to see that on the AWS console go to the S3 bucket console > entered the userId in the search bar
+
+![](images/s3_objects.png)
+
+![](images/s3_topics.png)
+
+![](images/s3_json.png)
+
+
+
+
+
+
