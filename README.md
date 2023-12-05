@@ -331,8 +331,21 @@ After modifying the user_posting_emulation.py, to run and send the data, the RES
 
 ![](images/s3_json.png)
 
+## Databricks
+Setting up Databricks account that reads data from AWS into Databricks
 
+### Mount a S3 bucket to Databricks
+Cleaning and querying the batch data that reads from S3 bucket into Databricks. The file ![](databricks/mount_a_s3_bucket_to_databricks.ipynb) is a notebook that was created in the Databricks application. Below is the step that was taken to carry out the necessary task:
 
+1.  Importing the required libraries
+1.  Listing the tables in the Databricks Filestore
+1.  Reading the .CSV file type, which contained the access key & secert access key
+1.  Mounting the S3 Bucket into the Databricks and making sure that the output return 'True'
+1.  Checking if the S3 bucket was mount properly, which the command to run was as follows:
+    -   display(dbutils.fs.ls("/mnt/mount_name/../.."))
+1.  Reading the JSON format dataset from S3 to Databricks
+1.  Unmounting the S3 bucket by using the following command (this was optional):
+    -   dbutils.fs.unmount("/mnt/mount_name")
 
 
 
