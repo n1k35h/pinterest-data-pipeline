@@ -348,5 +348,36 @@ Cleaning and querying the batch data that reads from S3 bucket into Databricks. 
 1.  Unmounting the S3 bucket by using the following command (this was optional):
     -   dbutils.fs.unmount("/mnt/mount_name")
 
+## Spark on Databricks
+Performing data cleaning and computations using Spark on Databricks
+
+### Cleaning & Querying the Dataframes for each of the 3 Tables
+-   Cleaning Pinterest, Geolocation and User tables by performing necessary action for the relevant required columns for each of the tables. Also rearranging the columns so the columns reflect in the correct order.
+
+    Here is a sample of cleaning the Geolocation table
+
+        # created a new column containing latitude and longitude
+        df_geo = df_geo.withColumn("coordinates", array(col("latitude"), col("longitude")))
+
+        # dropping columns
+        df_geo = df_geo.drop("latitude", "longitude")
+
+- After cleaning each of the tables, next step was to query the tables such as working out what was the most popular catergory in each country, finding the user with most followers in each country, most popular category for different age group, finding median follower counts of users based on their joining year and age group.
+
+
+-   Here is a sample of a query that was used to analysis the Tables:
+
+        # Finding user with most follower in each country
+        
+        df_c_pn_fc = df_pin.join(df_geo, "ind").groupBy(df_geo.country, df_pin.poster_name).agg(first(df_pin.follower_count).alias("follower_count")).orderBy(desc("follower_count"))
+        display(df_c_pn_fc)
+        
+        # country with most user followers
+
+        df_c_fc = df_c_pn_fc.orderBy(desc("follower_count"))
+        df_c_fc = df_c_fc.drop("poster_name")
+        df_c_fc.show(1)
+
+
 
 
