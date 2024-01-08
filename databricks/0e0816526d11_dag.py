@@ -21,7 +21,7 @@ default_args = {
 
 with DAG('0e0816526d11_dag',
     # should be a datetime format
-    start_date=(2024, 1, 6),
+    start_date=datetime(2024, 1, 6),
     # check out possible intervals, should be a string
     schedule_interval='@daily',
     catchup=False,
