@@ -22,6 +22,9 @@ Pinterest is a world-class visual discovery platform where users can find ideas 
 - [Databricks - Mount a S3 bucket to Databricks](#mount-a-s3-bucket-to-databricks)
 - [Spark on Databricks](#spark-on-databricks)
     - [Cleaning & Querying the Dataframes for each of the 3 Tables](#cleaning--querying-the-dataframes-for-each-of-the-3-tables)
+-[AWS MWAA - Creating & uploading a DAG to a MWAA environment](#aws-mwaa---creating--uploading-a-dag-to-a-mwaa-environment)
+-[Stream Processing: AWS Kinesis](#stream-processing-aws-kinesis)
+-[Conclusion](#conclusion)
     
 ## Brief Description
 For this project, the scenario is to create a system that uses the AWS Cloud that will enables the Pinterest to crunch billions of data points each day by running through two separate pipelines - Batch Processing and Stream Processing. 
@@ -55,7 +58,9 @@ For this project, the scenario is to create a system that uses the AWS Cloud tha
 
 - API Gateway - Amazon API Gateway is an AWS service that allows the creation, maintenance and securing of scalable REST, HTTP and Websocket APIs. APIs can be created to access AWS services and other web services or data stored in the AWS Cloud. As a developer, you can use the service to create APIs that serve your client's applications or that are available to third-party app developers.
 
+- AWS MWAA - Amazon Managed Workflows for Apache Airflow (MWAA) is a managed service that was designed to help you integrate Apache Airflow straight in the cloud, with minimal setup and the quickest time to execution. Apache Airflow is a tool used to schedule and monitor different sequences of processes and tasks, referred to as workflows.
 
+- AWS Kinesis - AWS Kinesis can collect streaming data such as event logs, social media feeds, application data, and IoT sensor data in real time or near real-time. Kinesis enables you to process and analyze this data as soon as it arrives, allowing you to respond instantly and gain timely analytics insights.
 
 ## Starting to build the Data Pipeline
 
@@ -380,6 +385,67 @@ Performing data cleaning and computations using Spark on Databricks
         df_c_fc = df_c_fc.drop("poster_name")
         df_c_fc.show(1)
 
+## AWS MWAA - Creating & uploading a DAG to a MWAA environment
+Orchestrating databricks workload on to AWS MWAA platform.
+Created a DAG (Directed Acyclic Graph) python file, which will automate the workload that will process the batch information daily using the AWS MWAA platform. By using the Airflow UI it starts to schedule the dag, which will then connect to the Databricks notebook that was created for the batch processing.
 
+## Stream Processing: AWS Kinesis
+Sends streaming data to AWS Kinesis and reads data in Databricks, which will then save the data in Delta tables.
 
+### Creating Data streams using Kinesis Data Streams
+Used the Kinesis Data Streams to create the 3 required streams
 
+-   streaming-<your_UserId>-pin
+-   streaming-<your_UserId>-geo
+-   streaming-<your_UserId>-user
+
+### Configuring an API with Kinesis proxy integration
+Used similar type of code that invoked the Kafka topic API to this time allow to invoke Kinesis stream API data. 
+
+In the API, the 3 methods were created to enable the API:
+
+-   List streams in Kinesis
+-   Create, describe and delete streams in Kinesis
+-   Add records to streams in Kinesis
+
+### Sending, Reading, Transforming & Writing data to the Kinesis Streams
+
+-   #### Sending Data
+    Created a new script called [user_posting_emulation_streaming.py](databricks/user_posting_emulation_streaming.py) to send stream information to their corresponding streams.
+
+-   #### Reading Data
+    Created a new notebook in Databricks thats read the credentials to retrieve the Access Key and Secret Access Key.
+
+    Below read method was used to ingest data into Kinesis Data Streams, which should go into the Kinesis Console to see if the Data Streams is receiving the data.
+
+        df = spark \
+        .readStream \
+        .format('kinesis') \
+        .option('streamName','<KINESIS_STREAM_NAME>') \
+        .option('initialPosition','earliest') \
+        .option('region','us-east-1') \
+        .option('awsAccessKey', ACCESS_KEY) \
+        .option('awsSecretKey', SECRET_KEY) \
+        .load()
+
+    #### Transforming Data
+    Cleaning the data in the same way that was done previously.
+
+    #### Writing Data
+    After the data was cleaned, it was time to save the data in the Delta Tables by using the following code below:
+
+        df.writeStream \
+        .format("delta") \
+        .outputMode("append") \
+        .option("checkpointLocation", "/tmp/kinesis/_checkpoints/") \
+        .table("<TABLE_NAME>")
+
+        Streaming Data should be saved in the following tables:
+        -   <your_UserId>_pin_table
+        -   <your_UserId>_geo_table
+        -   <your_UserId>_user_table
+
+## Conclusion
+Overall, the pipeline of the data for both Batch and Stream data should work in the similar pattern as below
+
+![](images/batch_&_stream_pipeline.png)
