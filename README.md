@@ -428,10 +428,10 @@ In the API, the 3 methods were created to enable the API:
         .option('awsSecretKey', SECRET_KEY) \
         .load()
 
-    #### Transforming Data
+-   #### Transforming Data
     Cleaning the data in the same way that was done previously.
 
-    #### Writing Data
+-   #### Writing Data
     After the data was cleaned, it was time to save the data in the Delta Tables by using the following code below:
 
         df.writeStream \
