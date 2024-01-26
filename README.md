@@ -22,9 +22,9 @@ Pinterest is a world-class visual discovery platform where users can find ideas 
 - [Databricks - Mount a S3 bucket to Databricks](#mount-a-s3-bucket-to-databricks)
 - [Spark on Databricks](#spark-on-databricks)
     - [Cleaning & Querying the Dataframes for each of the 3 Tables](#cleaning--querying-the-dataframes-for-each-of-the-3-tables)
--[AWS MWAA - Creating & uploading a DAG to a MWAA environment](#aws-mwaa---creating--uploading-a-dag-to-a-mwaa-environment)
--[Stream Processing: AWS Kinesis](#stream-processing-aws-kinesis)
--[Conclusion](#conclusion)
+- [AWS MWAA - Creating & uploading a DAG to a MWAA environment](#aws-mwaa---creating--uploading-a-dag-to-a-mwaa-environment)
+- [Stream Processing: AWS Kinesis](#stream-processing-aws-kinesis)
+- [Conclusion](#conclusion)
     
 ## Brief Description
 For this project, the scenario is to create a system that uses the AWS Cloud that will enables the Pinterest to crunch billions of data points each day by running through two separate pipelines - Batch Processing and Stream Processing. 
