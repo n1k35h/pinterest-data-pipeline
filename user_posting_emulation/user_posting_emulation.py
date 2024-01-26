@@ -38,6 +38,10 @@ def run_infinite_post_data_loop():
     Invoke URL - when the code is running it sends the Data to the S3 Bucket where each of the URL stores a json file
     to their corresponding URL (pin_url, geo_url and user_url)
 
+    The payload is created for the batch data to be sent to AWS MSK console
+
+    Sends a POST request to the API for the batch data to be sent to the topic folder
+
     Code will continue to run until it gets interrupted
 
     Attribute:
@@ -48,14 +52,6 @@ def run_infinite_post_data_loop():
         geo data gets a random row from the geolocation_data table
     user_result into json file
         user data gets a random row from the user_data table
-
-    Parameter:
-    ----------
-    None
-
-    Return:
-    -------
-    None
 
     '''
 
