@@ -411,7 +411,7 @@ In the API, the 3 methods were created to enable the API:
 ### Sending, Reading, Transforming & Writing data to the Kinesis Streams
 
 -   #### Sending Data
-    Created a new script called [user_posting_emulation_streaming.py](databricks/user_posting_emulation_streaming.py) to send stream information to their corresponding streams.
+    Created a new script called [user_posting_emulation_streaming.py](user_posting_emulation/user_posting_emulation_streaming.py) to send stream information to their corresponding streams.
 
 -   #### Reading Data
     Created a new notebook in Databricks thats read the credentials to retrieve the Access Key and Secret Access Key.
