@@ -1,3 +1,4 @@
+import yaml
 import requests
 from time import sleep
 import random
@@ -13,19 +14,120 @@ random.seed(100)
 
 class AWSDBConnector:
 
-    def __init__(self):
+    '''
 
-        self.HOST = "pinterestdbreadonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com"
-        self.USER = 'project_user'
-        self.PASSWORD = ':t%;yCY3Yjg'
-        self.DATABASE = 'pinterest_data'
-        self.PORT = 3306
-        
+    .yaml file is created where the credential is held
+
+    1st Method - read_creds: this will open and read the credential from the .yaml file
+    
+    2nd Method - create_db_connector: this should create a database connector to read the credential and connect to the database
+
+    '''
+    
+    def read_creds(self, file):
+        # read the credentials yaml file and returns a dictionary of the credentials
+        with open(file, 'r') as f:
+            creds = yaml.safe_load(f)
+        return creds
+
     def create_db_connector(self):
-        engine = sqlalchemy.create_engine(f"mysql+pymysql://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DATABASE}?charset=utf8mb4")
+        # reading the credential from the yaml file
+        creds = self.read_creds('upe_creds.yaml')
+        HOST = creds['AWS_HOST']
+        USER = creds['AWS_USER']
+        PASSWORD = creds['AWS_PASSWORD']
+        DATABASE = creds['AWS_DATABASE']
+        PORT = creds['AWS_PORT']
+        engine = sqlalchemy.create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4")
         return engine
 
 new_connector = AWSDBConnector()
+
+class Stream_User_Posting_Emulation():
+
+    '''
+
+    Avoiding replicates in the code Attribute & Methods are created
+    
+    Attribute - result: json - data is picked from a random row in the table
+
+    Methods - gets the data from a random row in the table
+
+    '''
+    def __init__(self, connection, random_row):
+
+        '''
+
+        connection should be made between the table and API server
+        random_row should retrieve the data between 1 to 11000 from the table
+
+        '''
+        self.pin_streaming_result = self.put_table_data(connection, random_row, "pinterest")
+        self.geo_streaming_result = self.put_table_data(connection, random_row, "geolocation")
+        self.user_streaming_result = self.put_table_data(connection, random_row, "user")
+        self.stream_header = {'Content-Type': 'application/json'}
+
+    def put_table_data(self, connection, random_row, data_name):
+
+        '''
+
+        reads a SQL query to select all columns from the table and return a random_row
+
+        '''
+
+        string = text(f"SELECT * FROM {data_name}_data LIMIT {random_row}, 1")
+        selected_row = connection.execute(string)
+
+        # Start of the loop
+        for row in selected_row:
+            result = dict(row._mapping)
+        return result
+
+    def stream_payload(self, streaming_structure, data_name):
+
+        '''
+
+        Parameter: value of the structre data from the records should be sent as a json file to the url table
+
+        Return 
+        ------
+            result: dict - ready to be sent to stream (AWS MSK console)
+        
+        '''
+        payload = json.dumps({
+                
+            "StreamName": f"streaming-0e0816526d11-{data_name}",
+            "Data": streaming_structure, 
+                "PartitionKey" : f"{data_name}_streaming_partition"
+        })
+
+        return payload
+
+    def stream_request(self, streaming_structure, data_name):
+
+        '''
+        json file is send to the url of the table to store data 
+        and if response.status_code prints 200, this means success
+        
+        '''
+
+        invoke_url = f"https://41mrms02f1.execute-api.us-east-1.amazonaws.com/prod2/streams/streaming-0e0816526d11-{data_name}/record"
+        payload = self.stream_payload(streaming_structure, data_name)
+        response = requests.request("PUT", invoke_url, headers=self.stream_header, data=payload)
+        print(f"stream {data_name} data: {response.status_code}")
+
+    def stream_data(self, pin_streaming_structure, geo_streaming_structure, user_streaming_structure):
+
+        '''
+        
+        sends a request of the streaming structure to AWS MSK console
+
+        '''
+
+        self.stream_request(pin_streaming_structure, "pin")
+        self.stream_request(geo_streaming_structure, "geo")
+        self.stream_request(user_streaming_structure, "user")
+
 
 def run_infinite_post_data_loop():
 
@@ -46,65 +148,27 @@ def run_infinite_post_data_loop():
         engine = new_connector.create_db_connector()
 
         with engine.connect() as connection:
+            conn = Stream_User_Posting_Emulation(connection, random_row)
 
-            pin_streaming_string = text(f"SELECT * FROM pinterest_data LIMIT {random_row}, 1")
-            pin_streaming_selected_row = connection.execute(pin_streaming_string)
-            
-            for row in pin_streaming_selected_row:
-                pin_streaming_result = dict(row._mapping)
-
-            geo_streaming_string = text(f"SELECT * FROM geolocation_data LIMIT {random_row}, 1")
-            geo_streaming_selected_row = connection.execute(geo_streaming_string)
-            
-            for row in geo_streaming_selected_row:
-                geo_streaming_result = dict(row._mapping)
-
-            user_streaming_string = text(f"SELECT * FROM user_data LIMIT {random_row}, 1")
-            user_streaming_selected_row = connection.execute(user_streaming_string)
-            
-            for row in user_streaming_selected_row:
-                user_streaming_result = dict(row._mapping)
-
-            pin_streaming_url = "https://41mrms02f1.execute-api.us-east-1.amazonaws.com/prod2/streams/streaming-0e0816526d11-pin/record"
-
-            pin_streaming_payload = json.dumps({
-                "StreamName": "streaming-0e0816526d11-pin",
+            pin_streaming_structure = {
                 "Data" : {
-                    "index": pin_streaming_result["index"], "unique_id": pin_streaming_result["unique_id"], "title": pin_streaming_result["title"], "description": pin_streaming_result["description"], "poster_name": pin_streaming_result["poster_name"], "follower_count": pin_streaming_result["follower_count"], "tag_list": pin_streaming_result["tag_list"], "is_image_or_video": pin_streaming_result["is_image_or_video"], "image_src": pin_streaming_result["image_src"], "downloaded": pin_streaming_result["downloaded"], "save_location": pin_streaming_result["save_location"], "category": pin_streaming_result["category"]
-                },
-                "PartitionKey" : "pin_streaming_partition"
-            })
+                    "index": conn.pin_streaming_result["index"], "unique_id": conn.pin_streaming_result["unique_id"], "title": conn.pin_streaming_result["title"], "description": conn.pin_streaming_result["description"], "poster_name": conn.pin_streaming_result["poster_name"], "follower_count": conn.pin_streaming_result["follower_count"], "tag_list": conn.pin_streaming_result["tag_list"], "is_image_or_video": conn.pin_streaming_result["is_image_or_video"], "image_src": conn.pin_streaming_result["image_src"], "downloaded": conn.pin_streaming_result["downloaded"], "save_location": conn.pin_streaming_result["save_location"], "category": conn.pin_streaming_result["category"]
+                }
+            }
 
-            geo_streaming_url = "https://41mrms02f1.execute-api.us-east-1.amazonaws.com/prod2/streams/streaming-0e0816526d11-geo/record"
-
-            geo_streaming_payload = json.dumps({
-                "StreamName": "streaming-0e0816526d11-geo",
+            geo_streaming_structure = {
                 "Data" : {
-                    "ind": geo_streaming_result["ind"], "timestamp": str(geo_streaming_result["timestamp" ]), "latitude": geo_streaming_result["latitude"], "longitude": geo_streaming_result["longitude"], "country": geo_streaming_result["country"]
-                },
-                "PartitionKey" : "geo_streaming_partition"
-            })
+                    "ind": conn.geo_streaming_result["ind"], "timestamp": str(conn.geo_streaming_result["timestamp" ]), "latitude": conn.geo_streaming_result["latitude"], "longitude": conn.geo_streaming_result["longitude"], "country": conn.geo_streaming_result["country"]
+                }
+            }
 
-            user_streaming_url = "https://41mrms02f1.execute-api.us-east-1.amazonaws.com/prod2/streams/streaming-0e0816526d11-user/record"
-
-            user_streaming_payload = json.dumps({
-                "StreamName": "streaming-0e0816526d11-user",
+            user_streaming_structure = {
                 "Data" : {
-                    "ind": user_streaming_result["ind"], "first_name": user_streaming_result["first_name"], "last_name": user_streaming_result["last_name"], "age": user_streaming_result["age"], "date_joined": str(user_streaming_result["date_joined"])
-                },
-                "PartitionKey" : "user_streaming_partition"
-            })
+                    "ind": conn.user_streaming_result["ind"], "first_name": conn.user_streaming_result["first_name"], "last_name": conn.user_streaming_result["last_name"], "age": conn.user_streaming_result["age"], "date_joined": str(conn.user_streaming_result["date_joined"])
+                }
+            }
 
-            headers = {'Content-Type': 'application/json'}
-            response = requests.request("PUT", pin_streaming_url, headers=headers, data=pin_streaming_payload)
-            response = requests.request("PUT", geo_streaming_url, headers=headers, data=geo_streaming_payload)            
-            response = requests.request("PUT", user_streaming_url, headers=headers, data=user_streaming_payload)
-            print(response.status_code)
-            
-            # print(pin_streaming_result)
-            # print(geo_streaming_result)
-            # print(user_streaming_result)
-
+            conn.stream_data(pin_streaming_structure, geo_streaming_structure, user_streaming_structure)
 
 if __name__ == "__main__":
     run_infinite_post_data_loop()
