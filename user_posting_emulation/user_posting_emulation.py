@@ -114,7 +114,7 @@ class Batch_User_Posting_Emulation():
         response = requests.request("POST", invoke_url, headers=self.batch_header, data=payload)
         print(f"batch {data_name} data: {response.status_code}")
 
-    def batch_data(self, geo_structure, pin_structure, user_structure):
+    def batch_data(self, pin_structure, geo_structure, user_structure):
 
         '''
         
@@ -122,8 +122,8 @@ class Batch_User_Posting_Emulation():
 
         '''
 
-        self.batch_request(geo_structure, "geo")
         self.batch_request(pin_structure, "pin")
+        self.batch_request(geo_structure, "geo")
         self.batch_request(user_structure, "user")
 
 

@@ -150,18 +150,21 @@ def run_infinite_post_data_loop():
         with engine.connect() as connection:
             conn = Stream_User_Posting_Emulation(connection, random_row)
 
+            # Data is send as pairs of dict (column name: value) separate by a comma (,)
             pin_streaming_structure = {
                 "Data" : {
                     "index": conn.pin_streaming_result["index"], "unique_id": conn.pin_streaming_result["unique_id"], "title": conn.pin_streaming_result["title"], "description": conn.pin_streaming_result["description"], "poster_name": conn.pin_streaming_result["poster_name"], "follower_count": conn.pin_streaming_result["follower_count"], "tag_list": conn.pin_streaming_result["tag_list"], "is_image_or_video": conn.pin_streaming_result["is_image_or_video"], "image_src": conn.pin_streaming_result["image_src"], "downloaded": conn.pin_streaming_result["downloaded"], "save_location": conn.pin_streaming_result["save_location"], "category": conn.pin_streaming_result["category"]
                 }
             }
 
+            # Data is send as pairs of dict (column name: value) separate by a comma (,)
             geo_streaming_structure = {
                 "Data" : {
                     "ind": conn.geo_streaming_result["ind"], "timestamp": str(conn.geo_streaming_result["timestamp" ]), "latitude": conn.geo_streaming_result["latitude"], "longitude": conn.geo_streaming_result["longitude"], "country": conn.geo_streaming_result["country"]
                 }
             }
 
+            # Data is send as pairs of dict (column name: value) separate by a comma (,)
             user_streaming_structure = {
                 "Data" : {
                     "ind": conn.user_streaming_result["ind"], "first_name": conn.user_streaming_result["first_name"], "last_name": conn.user_streaming_result["last_name"], "age": conn.user_streaming_result["age"], "date_joined": str(conn.user_streaming_result["date_joined"])
