@@ -15,23 +15,50 @@ random.seed(100)
 class AWSDBConnector:
 
     '''
-
-    .yaml file is created where the credential is held
-
-    1st Method - read_creds: this will open and read the credential from the .yaml file
+    As the credential is a sensitive data a .yaml file is created, which will hold all sensitive data that other users
+    cannot view.
     
-    2nd Method - create_db_connector: this should create a database connector to read the credential and connect to the database
+    1). Create a Method that read the .yaml file that holds the credential info
+
+    2). create_db_connector that connects to the .yaml file, which a variable is assigned to the read method.
+        Instead of the sensitive data showing in the square brackets the variable in .yaml will replace the
+        sensitive data. E.G:
+
+                ['AWS_HOST']
+                ['AWS_USER']
+                ['AWS_PASSWORD']
+                ['AWS_DATABASE']
+                ['AWS_PORT']
+
+        Then connecting the sqlalchemy engine
 
     '''
     
     def read_creds(self, file):
-        # read the credentials yaml file and returns a dictionary of the credentials
+    
+        '''
+        
+        .yaml file is open for the file to be read 'r'
+        
+        '''    
+    
         with open(file, 'r') as f:
             creds = yaml.safe_load(f)
         return creds
 
     def create_db_connector(self):
-        # reading the credential from the yaml file
+
+        '''
+        Variable is assigned to read the .yaml file
+
+        Sensitive data is replaced with the variables in the .yaml file 
+
+        Returns:
+        --------
+        Connecting to the sqlalchemy engine with the assigned variable credential 
+
+        '''
+
         creds = self.read_creds('upe_creds.yaml')
         HOST = creds['AWS_HOST']
         USER = creds['AWS_USER']
